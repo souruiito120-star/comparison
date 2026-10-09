@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML/CSS フォームレイアウト比較・集計表書き込みツール</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+            tab-size: 2;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #374151;
+        }
+
+        .preview-iframe {
+            background-color: #ffffff;
+            transition: width 0.2s ease-in-out;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .drag-over-active {
+            border-color: #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.15) !important;
+        }
+
+        /* Simple form view background styling */
+        .simple-form-bg {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+
+        .dark .simple-form-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+
+        /* Toast animation */
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-animate {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body
+    class="min-h-screen flex flex-col overflow-x-hidden bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+
+    <!-- Header -->
+    <header
+        class="sticky top-0 bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-5 py-3 flex flex-wrap items-center justify-between gap-4 z-30 backdrop-blur-md shadow-sm dark:shadow-lg transition-colors">
+        <!-- 標準モード用タイトル -->
+        <div id="standardHeaderTitle" class="flex items-center gap-3">
+            <div
+                class="p-2.5 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                <i class="fa-solid fa-layer-group text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    レイアウト比較フォーム
+                    <span
+                        class="text-[10px] uppercase font-bold bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-500/20 dark:border-indigo-500/30">【コンテンツ制作】P88_授業課題：レイアウト比較フォーム作成</span>
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Flexbox / Grid / テーブル レイアウト比較 ＋ 集計表</p>
+            </div>
+        </div>
+
+        <!-- 簡易モード用タイトル（初期は非表示） -->
+        <div id="simpleHeaderTitle" class="hidden flex items-center gap-3">
+            <div
+                class="p-2.5 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+                <i class="fa-solid fa-table-columns text-xl"></i>
+            </div>
+            <h1 class="text-lg font-bold text-slate-800 dark:text-slate-100">
+                フォームレイアウト比較
+            </h1>
+        </div>
+
+        <!-- Global Toolbar Controls -->
+        <div
+            class="flex flex-wrap items-center gap-3 bg-slate-50 dark:bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 backdrop-blur">
+
+            <!-- 簡易フォーム切り替えボタン -->
+            <button onclick="toggleViewMode()" id="viewModeBtn"
+                class="px-3 py-1.5 text-xs bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold rounded-lg shadow-md transition flex items-center gap-1.5 border border-indigo-400/30">
+                <i class="fa-solid fa-table-columns"></i>
+                <span id="viewModeText">比較モードに変更</span>
+            </button>
+
+            <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 hidden sm:block"></div>
+
+            <!-- Dark / Light Mode Switcher -->
+            <button onclick="toggleTheme()"
+                class="px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium rounded-lg transition flex items-center gap-1.5 border border-slate-300 dark:border-slate-700">
+                <i id="themeIcon" class="fa-solid fa-moon text-indigo-500"></i>
+                <span id="themeText">ダークモード</span>
+            </button>
+
+            <!-- 標準モード専用コントロール群（簡易モード時は非表示） -->
+            <div id="standardControls" class="flex flex-wrap items-center gap-3">
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 hidden sm:block"></div>
+
+                <!-- Viewport Resizer Slider -->
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-mobile-screen text-indigo-500 dark:text-indigo-400"></i> 幅:
+                    </span>
+                    <input type="range" id="widthSlider" min="300" max="800" value="400"
+                        class="w-24 sm:w-32 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                    <span id="widthValue"
+                        class="text-xs text-indigo-600 dark:text-indigo-400 font-mono w-12 font-semibold">400px</span>
+                </div>
+
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 hidden sm:block"></div>
+
+                <!-- Responsive Viewport Presets -->
+                <div class="flex gap-1">
+                    <button onclick="setPreviewWidth(375)"
+                        class="px-2.5 py-1 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md transition flex items-center gap-1 border border-slate-300 dark:border-slate-700"
+                        title="Mobile (375px)">
+                        <i class="fa-solid fa-mobile-screen"></i> スマホ
+                    </button>
+                    <button onclick="setPreviewWidth(768)"
+                        class="px-2.5 py-1 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md transition flex items-center gap-1 border border-slate-300 dark:border-slate-700"
+                        title="Tablet (768px)">
+                        <i class="fa-solid fa-tablet-screen-button"></i> タブレット
+                    </button>
+                    <button onclick="setPreviewWidth('100%')"
+                        class="px-2.5 py-1 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md transition flex items-center gap-1 border border-slate-300 dark:border-slate-700"
+                        title="Full Width (100%)">
+                        <i class="fa-solid fa-expand"></i> 100%
+                    </button>
+                </div>
+
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 hidden sm:block"></div>
+
+                <!-- Inspection Tools -->
+                <div class="flex items-center gap-2">
+                    <label
+                        class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white select-none bg-slate-100 dark:bg-slate-900 px-2.5 py-1 rounded-md border border-slate-300 dark:border-slate-800 transition">
+                        <input type="checkbox" id="outlineToggle" onchange="toggleOutlines()"
+                            class="rounded border-slate-400 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5">
+                        <i class="fa-solid fa-border-all text-indigo-500 dark:text-indigo-400"></i>
+                        <span>枠線強調</span>
+                    </label>
+                </div>
+
+                <div class="h-4 w-px bg-slate-300 dark:bg-slate-800 hidden sm:block"></div>
+
+                <!-- Global Action -->
+                <button onclick="resetDefaults()"
+                    class="text-xs bg-slate-200 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-300 px-3 py-1.5 rounded-lg transition border border-slate-300 dark:border-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i> 初期化
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- VIEW 1: Main 3-Column Slot Layout (標準モード: テーブル -> Flex -> Grid の順) -->
+    <main id="mainView" class="p-3 grid grid-cols-1 lg:grid-cols-3 gap-3 h-[700px] shrink-0">
+
+        <!-- ================= SLOT A: CLASSIC BLOCK/FLOAT (1つ目: テーブル) ================= -->
+        <section
+            class="flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800/80 overflow-hidden shadow-sm dark:shadow-lg transition-colors"
+            id="slot-classic" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event, 'classic')">
+            <div
+                class="bg-slate-100 dark:bg-slate-800/80 px-4 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-amber-500 inline-block shadow-sm shadow-amber-500/50"></span>
+                    <h2 class="font-bold text-sm text-slate-800 dark:text-slate-100">Slot A: テーブル</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="openModal('classic')"
+                        class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 shadow-sm"
+                        title="画面を拡大">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px]"></i>
+                        <span>拡大</span>
+                    </button>
+                    <label
+                        class="cursor-pointer text-[11px] bg-slate-200 dark:bg-slate-700 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-md transition flex items-center gap-1.5 border border-slate-300 dark:border-slate-600/50"
+                        title="HTMLとCSSを同時選択・ドロップ可能">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-500 dark:text-indigo-400"></i>
+                        <span>ファイル読込</span>
+                        <input type="file" class="hidden" accept=".html,.htm,.css" multiple
+                            onchange="handleFileUpload(event, 'classic')">
+                    </label>
+                    <button onclick="clearSlot('classic')"
+                        class="text-xs text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="スロット消去">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-xs">
+                <button onclick="switchTab('classic', 'preview')" id="btn-classic-preview"
+                    class="tab-btn active px-4 py-2 border-b-2 border-indigo-500 font-semibold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900/90 flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye"></i> View
+                </button>
+                <button onclick="switchTab('classic', 'html')" id="btn-classic-html"
+                    class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-brands fa-html5 text-orange-500"></i> HTML
+                </button>
+                <button onclick="switchTab('classic', 'css')" id="btn-classic-css"
+                    class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-brands fa-css3-alt text-blue-500"></i> CSS
+                </button>
+            </div>
+
+            <div
+                class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/30 text-[11px] text-indigo-600 dark:text-indigo-300/80 flex justify-between items-center">
+                <span><i class="fa-regular fa-file-code mr-1"></i> HTML/CSSファイルをここにドロップ可能</span>
+                <span class="text-[10px] text-slate-400">2ファイル同時読込可</span>
+            </div>
+
+            <div class="flex-1 relative overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                <div id="pane-classic-preview"
+                    class="tab-pane h-full w-full flex justify-center items-start overflow-auto p-3">
+                    <iframe id="iframe-classic"
+                        class="preview-iframe rounded-lg border border-slate-300 dark:border-slate-200/20 h-full"
+                        style="width: 400px;"></iframe>
+                </div>
+                <div id="pane-classic-html" class="tab-pane hidden h-full flex flex-col p-2">
+                    <textarea id="code-classic-html" oninput="updateSlot('classic')"
+                        class="w-full h-full p-3 bg-white dark:bg-slate-900/90 text-emerald-700 dark:text-emerald-400 code-font text-xs resize-none rounded-lg border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-indigo-500"
+                        placeholder="<!-- HTMLをここに入力... -->" spellcheck="false"></textarea>
+                </div>
+                <div id="pane-classic-css" class="tab-pane hidden h-full flex flex-col p-2">
+                    <textarea id="code-classic-css" oninput="updateSlot('classic')"
+                        class="w-full h-full p-3 bg-white dark:bg-slate-900/90 text-cyan-700 dark:text-cyan-300 code-font text-xs resize-none rounded-lg border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-indigo-500"
+                        placeholder="/* CSSをここに入力... */" spellcheck="false"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLOT B: FLEXBOX (2つ目: Flex) ================= -->
+        <section
+            class="flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800/80 overflow-hidden shadow-sm dark:shadow-lg transition-colors"
+            id="slot-flex" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event, 'flex')">
+            <div
+                class="bg-slate-100 dark:bg-slate-800/80 px-4 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60">
+                <div class="flex items-center gap-2">
+                    <span
+                        class="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm shadow-emerald-500/50"></span>
+                    <h2 class="font-bold text-sm text-slate-800 dark:text-slate-100">Slot B: Flexbox</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="openModal('flex')"
+                        class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 shadow-sm"
+                        title="画面を拡大">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px]"></i>
+                        <span>拡大</span>
+                    </button>
+                    <label
+                        class="cursor-pointer text-[11px] bg-slate-200 dark:bg-slate-700 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-md transition flex items-center gap-1.5 border border-slate-300 dark:border-slate-600/50"
+                        title="HTMLとCSSを同時選択・ドロップ可能">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-500 dark:text-indigo-400"></i>
+                        <span>ファイル読込</span>
+                        <input type="file" class="hidden" accept=".html,.htm,.css" multiple
+                            onchange="handleFileUpload(event, 'flex')">
+                    </label>
+                    <button onclick="clearSlot('flex')"
+                        class="text-xs text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="スロット消去">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-xs">
+                <button onclick="switchTab('flex', 'preview')" id="btn-flex-preview"
+                    class="tab-btn active px-4 py-2 border-b-2 border-indigo-500 font-semibold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900/90 flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye"></i> View
+                </button>
+                <button onclick="switchTab('flex', 'html')" id="btn-flex-html"
+                    class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-brands fa-html5 text-orange-500"></i> HTML
+                </button>
+                <button onclick="switchTab('flex', 'css')" id="btn-flex-css"
+                    class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-brands fa-css3-alt text-blue-500"></i> CSS
+                </button>
+            </div>
+
+            <div
+                class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/30 text-[11px] text-indigo-600 dark:text-indigo-300/80 flex justify-between items-center">
+                <span><i class="fa-regular fa-file-code mr-1"></i> HTML/CSSファイルをここにドロップ可能</span>
+                <span class="text-[10px] text-slate-400">2ファイル同時読込可</span>
+            </div>
+
+            <div class="flex-1 relative overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                <div id="pane-flex-preview"
+                    class="tab-pane h-full w-full flex justify-center items-start overflow-auto p-3">
+                    <iframe id="iframe-flex"
+                        class="preview-iframe rounded-lg border border-slate-300 dark:border-slate-200/20 h-full"
+                        style="width: 400px;"></iframe>
+                </div>
+                <div id="pane-flex-html" class="tab-pane hidden h-full flex flex-col p-2">
+                    <textarea id="code-flex-html" oninput="updateSlot('flex')"
+                        class="w-full h-full p-3 bg-white dark:bg-slate-900/90 text-emerald-700 dark:text-emerald-400 code-font text-xs resize-none rounded-lg border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-indigo-500"
+                        placeholder="<!-- HTMLをここに入力... -->" spellcheck="false"></textarea>
+                </div>
+                <div id="pane-flex-css" class="tab-pane hidden h-full flex flex-col p-2">
+                    <textarea id="code-flex-css" oninput="updateSlot('flex')"
+                        class="w-full h-full p-3 bg-white dark:bg-slate-900/90 text-cyan-700 dark:text-cyan-300 code-font text-xs resize-none rounded-lg border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-indigo-500"
+                        placeholder="/* CSSをここに入力... */" spellcheck="false"></textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLOT C: GRID (3つ目: Grid) ================= -->
+        <section
+            class="flex flex-col bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800/80 overflow-hidden shadow-sm dark:shadow-lg transition-colors"
+            id="slot-grid" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
+            ondrop="handleDrop(event, 'grid')">
+            <div
+                class="bg-slate-100 dark:bg-slate-800/80 px-4 py-2 flex items-center justify-between border-b border-slate-200 dark:border-slate-700/60">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-indigo-500 inline-block shadow-sm shadow-indigo-500/50"></span>
+                    <h2 class="font-bold text-sm text-slate-800 dark:text-slate-100">Slot C: Grid</h2>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="openModal('grid')"
+                        class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 shadow-sm"
+                        title="画面を拡大">
+                        <i class="fa-solid fa-up-right-and-down-left-from-center text-[10px]"></i>
+                        <span>拡大</span>
+                    </button>
+                    <label
+                        class="cursor-pointer text-[11px] bg-slate-200 dark:bg-slate-700 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-md transition flex items-center gap-1.5 border border-slate-300 dark:border-slate-600/50"
+                        title="HTMLとCSSを同時選択・ドロップ可能">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-500 dark:text-indigo-400"></i>
+                        <span>ファイル読込</span>
+                        <input type="file" class="hidden" accept=".html,.htm,.css" multiple
+                            onchange="handleFileUpload(event, 'grid')">
+                    </label>
+                    <button onclick="clearSlot('grid')"
+                        class="text-xs text-slate-400 hover:text-rose-500 p-1.5 rounded transition" title="スロット消去">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-xs">
+                <button onclick="switchTab('grid', 'preview')" id="btn-grid-preview"
+                    class="tab-btn active px-4 py-2 border-b-2 border-indigo-500 font-semibold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-slate-900/90 flex items-center gap-1.5">
+                    <i class="fa-solid fa-eye"></i> View
+                </button>
+                <button onclick="switchTab('grid', 'html')" id="btn-grid-html"
+                    class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-brands fa-html5 text-orange-500"></i> HTML
+                </button>
+                <button onclick="switchTab('grid', 'css')" id="btn-grid-css"
+                    class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1.5">
+                    <i class="fa-brands fa-css3-alt text-blue-500"></i> CSS
+                </button>
+            </div>
+
+            <div
+                class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/30 text-[11px] text-indigo-600 dark:text-indigo-300/80 flex justify-between items-center">
+                <span><i class="fa-regular fa-file-code mr-1"></i> HTML/CSSファイルをここにドロップ可能</span>
+                <span class="text-[10px] text-slate-400">2ファイル同時読込可</span>
+            </div>
+
+            <div class="flex-1 relative overflow-hidden bg-slate-50 dark:bg-slate-950/80">
+                <div id="pane-grid-preview"
+                    class="tab-pane h-full w-full flex justify-center items-start overflow-auto p-3">
+                    <iframe id="iframe-grid"
+                        class="preview-iframe rounded-lg border border-slate-300 dark:border-slate-200/20 h-full"
+                        style="width: 400px;"></iframe>
+                </div>
+                <div id="pane-grid-html" class="tab-pane hidden h-full flex flex-col p-2">
+                    <textarea id="code-grid-html" oninput="updateSlot('grid')"
+                        class="w-full h-full p-3 bg-white dark:bg-slate-900/90 text-emerald-700 dark:text-emerald-400 code-font text-xs resize-none rounded-lg border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-indigo-500"
+                        placeholder="<!-- HTMLをここに入力... -->" spellcheck="false"></textarea>
+                </div>
+                <div id="pane-grid-css" class="tab-pane hidden h-full flex flex-col p-2">
+                    <textarea id="code-grid-css" oninput="updateSlot('grid')"
+                        class="w-full h-full p-3 bg-white dark:bg-slate-900/90 text-cyan-700 dark:text-cyan-300 code-font text-xs resize-none rounded-lg border border-slate-300 dark:border-slate-800 focus:outline-none focus:border-indigo-500"
+                        placeholder="/* CSSをここに入力... */" spellcheck="false"></textarea>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- VIEW 2: Simple Form Mode (簡易フォーム表示用・別ページ風ビュー) -->
+    <section id="simpleFormView" class="hidden p-6 simple-form-bg min-h-[500px]">
+        <div class="max-w-7xl mx-auto">
+            <!-- 3つ並べるフォームコンテナ -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- 1つ目: Tableレイアウト -->
+                <div class="bg-white/95 dark:bg-slate-900/95 rounded-2xl p-5 shadow-xl border border-white/20 flex flex-col">
+                    <h3 class="text-base font-bold text-center text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        ① Table
+                    </h3>
+                    <div class="flex-1 min-h-[380px] w-full flex justify-center">
+                        <iframe id="iframe-simple-classic" class="w-full h-[380px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white"></iframe>
+                    </div>
+                </div>
+
+                <!-- 2つ目: Flexbox -->
+                <div class="bg-white/95 dark:bg-slate-900/95 rounded-2xl p-5 shadow-xl border border-white/20 flex flex-col">
+                    <h3 class="text-base font-bold text-center text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        ② Flexbox
+                    </h3>
+                    <div class="flex-1 min-h-[380px] w-full flex justify-center">
+                        <iframe id="iframe-simple-flex" class="w-full h-[380px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white"></iframe>
+                    </div>
+                </div>
+
+                <!-- 3つ目: Grid -->
+                <div class="bg-white/95 dark:bg-slate-900/95 rounded-2xl p-5 shadow-xl border border-white/20 flex flex-col">
+                    <h3 class="text-base font-bold text-center text-slate-800 dark:text-slate-100 mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        ③ Grid
+                    </h3>
+                    <div class="flex-1 min-h-[380px] w-full flex justify-center">
+                        <iframe id="iframe-simple-grid" class="w-full h-[380px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SUMMARY & COMPARISON ANALYSIS TABLE -->
+    <section class="p-3 mb-8">
+        <div
+            class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-lg dark:shadow-xl max-w-7xl mx-auto transition-colors">
+
+            <!-- Table Header -->
+            <div
+                class="flex flex-wrap items-center justify-between gap-4 mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg border border-indigo-500/20">
+                        <i class="fa-solid fa-clipboard-list text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">レイアウト特徴 比較・検証集計表</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">コード量の自動算出・評価入力・レポート用の考察集計ツール</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="copySummaryReport()"
+                        class="px-4 py-2 text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md shadow-indigo-600/20 transition flex items-center gap-2">
+                        <i class="fa-regular fa-copy text-sm"></i> 集計・考察結果をコピー
+                    </button>
+                </div>
+            </div>
+
+            <!-- Comparison Cards & Table Grid Container -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <!-- Slot C Card (テーブル) -->
+                <div class="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border-2 border-amber-500/30 shadow-sm">
+                    <div
+                        class="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+                        <span class="font-bold text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group"></i> Slot A: テーブル
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div
+                            class="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-500"><i class="fa-brands fa-html5 text-orange-500 mr-1"></i>
+                                HTML</span>
+                            <span id="stat-classic-html"
+                                class="font-mono text-amber-600 dark:text-amber-400 font-bold">0文字 (0行)</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-500"><i class="fa-brands fa-css3-alt text-blue-500 mr-1"></i>
+                                CSS</span>
+                            <span id="stat-classic-css" class="font-mono text-cyan-600 dark:text-cyan-400 font-bold">0文字
+                                (0行)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slot A Card (Flexbox) -->
+                <div class="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border-2 border-emerald-500/30 shadow-sm">
+                    <div
+                        class="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+                        <span class="font-bold text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                            <i class="fa-solid fa-cubes"></i> Slot B: Flexbox
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div
+                            class="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-500"><i class="fa-brands fa-html5 text-orange-500 mr-1"></i>
+                                HTML</span>
+                            <span id="stat-flex-html"
+                                class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">0文字 (0行)</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-500"><i class="fa-brands fa-css3-alt text-blue-500 mr-1"></i>
+                                CSS</span>
+                            <span id="stat-flex-css" class="font-mono text-cyan-600 dark:text-cyan-400 font-bold">0文字
+                                (0行)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slot B Card (CSS Grid) -->
+                <div class="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border-2 border-indigo-500/30 shadow-sm">
+                    <div
+                        class="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+                        <span class="font-bold text-sm text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                            <i class="fa-solid fa-border-all"></i> Slot C: Grid
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div
+                            class="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-500"><i class="fa-brands fa-html5 text-orange-500 mr-1"></i>
+                                HTML</span>
+                            <span id="stat-grid-html"
+                                class="font-mono text-indigo-600 dark:text-indigo-400 font-bold">0文字 (0行)</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-500"><i class="fa-brands fa-css3-alt text-blue-500 mr-1"></i>
+                                CSS</span>
+                            <span id="stat-grid-css" class="font-mono text-cyan-600 dark:text-cyan-400 font-bold">0文字
+                                (0行)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Input Area -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <table class="w-full text-left text-xs border-collapse min-w-[700px]">
+                    <thead>
+                        <tr
+                            class="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
+                            <th class="p-3.5 w-40 font-bold border-r border-slate-200 dark:border-slate-800">評価項目</th>
+                            <th class="p-3.5 font-bold text-amber-600 dark:text-amber-400">Slot A: テーブル</th>
+                            <th class="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">Slot B: Flexbox</th>
+                            <th class="p-3.5 font-bold text-indigo-600 dark:text-indigo-400">Slot C: Grid</th>
+                        </tr>
+                    </thead>
+                    <tbody
+                        class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900/50">
+
+                        <!-- 1. HTMLの評価メモ -->
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
+                            <td
+                                class="p-3.5 font-bold text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-950/40 border-r border-slate-200 dark:border-slate-800">
+                                <i class="fa-brands fa-html5 text-orange-500 mr-1"></i> HTMLの構造評価
+                            </td>
+                            <td class="p-3">
+                                <input type="text" id="eval-classic-html" placeholder="テーブルのHTML構造に関する考察を入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                            </td>
+                            <td class="p-3">
+                                <input type="text" id="eval-flex-html" placeholder="FlexboxのHTML構造に関する考察を入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                            </td>
+                            <td class="p-3">
+                                <input type="text" id="eval-grid-html" placeholder="GridのHTML構造に関する考察を入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                            </td>
+                        </tr>
+
+                        <!-- 2. CSSの評価メモ -->
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
+                            <td
+                                class="p-3.5 font-bold text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-950/40 border-r border-slate-200 dark:border-slate-800">
+                                <i class="fa-brands fa-css3-alt text-blue-500 mr-1"></i> CSSの記述量・特徴
+                            </td>
+                            <td class="p-3">
+                                <input type="text" id="eval-classic-css" placeholder="テーブルのCSS特徴を入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                            </td>
+                            <td class="p-3">
+                                <input type="text" id="eval-flex-css" placeholder="FlexboxのCSS特徴を入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                            </td>
+                            <td class="p-3">
+                                <input type="text" id="eval-grid-css" placeholder="GridのCSS特徴を入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                            </td>
+                        </tr>
+
+                        <!-- 3. 修正しやすさ -->
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
+                            <td
+                                class="p-3.5 font-bold text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-950/40 border-r border-slate-200 dark:border-slate-800">
+                                <i class="fa-solid fa-wrench text-emerald-500 mr-1"></i> 修正の容易さ (◯/5)
+                            </td>
+                            <td class="p-3">
+                                <div class="flex flex-col gap-1.5">
+                                    <select id="rate-classic-easy"
+                                        class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs font-bold text-amber-500 focus:outline-none">
+                                        <option value="★★★★★ (5/5)" selected>★★★★★ (5/5)</option>
+                                        <option value="★★★★☆ (4/5)">★★★★☆ (4/5)</option>
+                                        <option value="★★★☆☆ (3/5)">★★★☆☆ (3/5)</option>
+                                        <option value="★★☆☆☆ (2/5)">★★☆☆☆ (2/5)</option>
+                                        <option value="★☆☆☆☆ (1/5)">★☆☆☆☆ (1/5)</option>
+                                    </select>
+                                    <input type="text" id="note-classic-easy" placeholder="理由..."
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                                </div>
+                            </td>
+                            <td class="p-3">
+                                <div class="flex flex-col gap-1.5">
+                                    <select id="rate-flex-easy"
+                                        class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs font-bold text-amber-500 focus:outline-none">
+                                        <option value="★★★★★ (5/5)" selected>★★★★★ (5/5)</option>
+                                        <option value="★★★★☆ (4/5)">★★★★☆ (4/5)</option>
+                                        <option value="★★★☆☆ (3/5)">★★★☆☆ (3/5)</option>
+                                        <option value="★★☆☆☆ (2/5)">★★☆☆☆ (2/5)</option>
+                                        <option value="★☆☆☆☆ (1/5)">★☆☆☆☆ (1/5)</option>
+                                    </select>
+                                    <input type="text" id="note-flex-easy" placeholder="理由..."
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                                </div>
+                            </td>
+                            <td class="p-3">
+                                <div class="flex flex-col gap-1.5">
+                                    <select id="rate-grid-easy"
+                                        class="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1.5 text-xs font-bold text-amber-500 focus:outline-none">
+                                        <option value="★★★★★ (5/5)" selected>★★★★★ (5/5)</option>
+                                        <option value="★★★★☆ (4/5)">★★★★☆ (4/5)</option>
+                                        <option value="★★★☆☆ (3/5)">★★★☆☆ (3/5)</option>
+                                        <option value="★★☆☆☆ (2/5)">★★☆☆☆ (2/5)</option>
+                                        <option value="★☆☆☆☆ (1/5)">★☆☆☆☆ (1/5)</option>
+                                    </select>
+                                    <input type="text" id="note-grid-easy" placeholder="理由..."
+                                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-inner">
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- 4. 見た目の違い・レスポンシブの挙動 -->
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
+                            <td
+                                class="p-3.5 font-bold text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-950/40 border-r border-slate-200 dark:border-slate-800">
+                                <i class="fa-solid fa-eye text-indigo-500 mr-1"></i> 見た目の違い
+                            </td>
+                            <td class="p-3">
+                                <textarea id="note-classic-look" placeholder="見た目の特徴・違いを入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 h-16 resize-none shadow-inner"></textarea>
+                            </td>
+                            <td class="p-3">
+                                <textarea id="note-flex-look" placeholder="見た目の特徴・違いを入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 h-16 resize-none shadow-inner"></textarea>
+                            </td>
+                            <td class="p-3">
+                                <textarea id="note-grid-look" placeholder="見た目の特徴・違いを入力..."
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 h-16 resize-none shadow-inner"></textarea>
+                            </td>
+                        </tr>
+
+                        <!-- 5. 総合考察 / 学習ノート -->
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
+                            <td
+                                class="p-3.5 font-bold text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-slate-950/40 border-r border-slate-200 dark:border-slate-800">
+                                <i class="fa-solid fa-graduation-cap text-amber-500 mr-1"></i> まとめ
+                            </td>
+                            <td colspan="3" class="p-3">
+                                <textarea id="note-summary-all"
+                                    class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg p-4 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 h-64 resize-y shadow-inner leading-relaxed"
+                                    placeholder="検証全体を通したまとめ・レポート用の考察を自由に入力してください..."></textarea>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal for Expanded Preview View -->
+    <div id="previewModal"
+        class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex-col transition-all duration-200">
+        <div
+            class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span id="modalTitle"
+                    class="font-bold text-sm text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                    <i class="fa-solid fa-expand"></i> スロット拡大表示
+                </span>
+            </div>
+
+            <div
+                class="flex items-center gap-2 bg-slate-100 dark:bg-slate-950 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                <button onclick="setModalDeviceWidth(375)" id="btn-modal-mobile"
+                    class="px-3 py-1.5 text-xs bg-indigo-600 text-white font-medium rounded transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-mobile-screen"></i> スマホ (375px)
+                </button>
+                <button onclick="setModalDeviceWidth(768)" id="btn-modal-tablet"
+                    class="px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-tablet-screen-button"></i> タブレット (768px)
+                </button>
+                <button onclick="setModalDeviceWidth(1024)" id="btn-modal-desktop"
+                    class="px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-laptop"></i> PC (1024px)
+                </button>
+                <button onclick="setModalDeviceWidth('100%')" id="btn-modal-full"
+                    class="px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-expand"></i> 100%
+                </button>
+            </div>
+
+            <button onclick="closeModal()"
+                class="text-slate-400 hover:text-slate-700 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-lg transition">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 bg-slate-100 dark:bg-slate-950 p-6 flex justify-center items-start overflow-auto">
+            <iframe id="modalIframe"
+                class="preview-iframe rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xl h-full transition-all duration-300"
+                style="width: 375px;"></iframe>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 flex flex-col gap-2 z-50 pointer-events-none"></div>
+
+    <script>
+        let currentModalSlot = null;
+        let showOutlines = false;
+        let isSimpleMode = false;
+
+        window.onload = function () {
+            resetDefaults();
+            setupSlider();
+        };
+
+        // 簡易フォーム表示の切り替え処理
+        function toggleViewMode() {
+            isSimpleMode = !isSimpleMode;
+            const mainView = document.getElementById('mainView');
+            const simpleFormView = document.getElementById('simpleFormView');
+            const viewModeText = document.getElementById('viewModeText');
+            const standardHeaderTitle = document.getElementById('standardHeaderTitle');
+            const simpleHeaderTitle = document.getElementById('simpleHeaderTitle');
+            const standardControls = document.getElementById('standardControls');
+
+            if (isSimpleMode) {
+                mainView.classList.add('hidden');
+                simpleFormView.classList.remove('hidden');
+                standardHeaderTitle.classList.add('hidden');
+                simpleHeaderTitle.classList.remove('hidden');
+                standardControls.classList.add('hidden');
+                viewModeText.innerText = '標準モードに戻る';
+                showToast("簡易フォーム表示に切り替えました", "info");
+                // 簡易表示用のiframeにも内容を反映
+                ['flex', 'grid', 'classic'].forEach(slot => updateSlot(slot));
+            } else {
+                mainView.classList.remove('hidden');
+                simpleFormView.classList.add('hidden');
+                standardHeaderTitle.classList.remove('hidden');
+                simpleHeaderTitle.classList.add('hidden');
+                standardControls.classList.remove('hidden');
+                viewModeText.innerText = '簡易モードに変更';
+                showToast("標準比較モードに戻りました", "info");
+            }
+        }
+
+        // ダーク / ライトモード切り替え機能
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-sun text-amber-500';
+                themeText.innerText = 'ライトモード';
+                showToast("ライトモードに変更しました", "info");
+            } else {
+                html.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-moon text-indigo-400';
+                themeText.innerText = 'ダークモード';
+                showToast("ダークモードに変更しました", "info");
+            }
+        }
+
+        function resetDefaults() {
+            ['flex', 'grid', 'classic'].forEach(slot => {
+                document.getElementById(`code-${slot}-html`).value = '';
+                document.getElementById(`code-${slot}-css`).value = '';
+
+                const evalHtml = document.getElementById(`eval-${slot}-html`);
+                const evalCss = document.getElementById(`eval-${slot}-css`);
+                const noteEasy = document.getElementById(`note-${slot}-easy`);
+                const noteLook = document.getElementById(`note-${slot}-look`);
+
+                if (evalHtml) evalHtml.value = '';
+                if (evalCss) evalCss.value = '';
+                if (noteEasy) noteEasy.value = '';
+                if (noteLook) noteLook.value = '';
+
+                updateSlot(slot);
+            });
+
+            const summaryAll = document.getElementById('note-summary-all');
+            if (summaryAll) summaryAll.value = '';
+
+            showToast("コードおよび集計表の内容を消去して初期化しました", "info");
+        }
+
+        function clearSlot(slot) {
+            document.getElementById(`code-${slot}-html`).value = '';
+            document.getElementById(`code-${slot}-css`).value = '';
+            updateSlot(slot);
+            showToast(`Slot ${slot.toUpperCase()} のコードを消去しました`, "warning");
+        }
+
+        function updateSlot(slot) {
+            const html = document.getElementById(`code-${slot}-html`).value;
+            const css = document.getElementById(`code-${slot}-css`).value;
+            const iframe = document.getElementById(`iframe-${slot}`);
+            const iframeSimple = document.getElementById(`iframe-simple-${slot}`);
+
+            updateCodeStats(slot, html, css);
+
+            const outlineStyle = showOutlines ? `
+                * {
+                    outline: 1px dashed #f43f5e !important;
+                    outline-offset: -1px;
+                }
+                body {
+                    outline: 2px solid #3b82f6 !important;
+                }
+            ` : '';
+
+            const emptyNoticeHtml = (!html.trim() && !css.trim()) ? `
+                <div style="display: flex; height: 100vh; justify-content: center; align-items: center; text-align: center; font-family: sans-serif; color: #94a3b8; padding: 20px; box-sizing: border-box;">
+                    <div>
+                        <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #64748b;">表示可能なコードがありません</div>
+                        <div style="font-size: 11px; margin-top: 4px; color: #94a3b8;">HTML/CSSを入力するかファイルをドロップしてください</div>
+                    </div>
+                </div>
+            ` : html;
+
+            const documentContent = `
+                <!DOCTYPE html>
+                <html lang="ja">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        ${css}
+                        ${outlineStyle}
+                    </style>
+                </head>
+                <body>
+                    ${emptyNoticeHtml}
+                </body>
+                </html>
+            `;
+
+            // メインiframeの更新
+            if (iframe) {
+                const doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(documentContent);
+                doc.close();
+            }
+
+            // 簡易フォーム用iframeの更新
+            if (iframeSimple) {
+                const simpleDoc = iframeSimple.contentWindow.document;
+                simpleDoc.open();
+                simpleDoc.write(documentContent);
+                simpleDoc.close();
+            }
+
+            if (currentModalSlot === slot) {
+                const modalDoc = document.getElementById('modalIframe').contentWindow.document;
+                modalDoc.open();
+                modalDoc.write(documentContent);
+                modalDoc.close();
+            }
+        }
+
+        function updateCodeStats(slot, html, css) {
+            const htmlChars = html.length;
+            const htmlLines = html ? html.split('\n').length : 0;
+            const cssChars = css.length;
+            const cssLines = css ? css.split('\n').length : 0;
+
+            document.getElementById(`stat-${slot}-html`).innerText = `${htmlChars.toLocaleString()}文字 (${htmlLines}行)`;
+            document.getElementById(`stat-${slot}-css`).innerText = `${cssChars.toLocaleString()}文字 (${cssLines}行)`;
+        }
+
+        function switchTab(slot, tab) {
+            ['preview', 'html', 'css'].forEach(t => {
+                const pane = document.getElementById(`pane-${slot}-${t}`);
+                const btn = document.getElementById(`btn-${slot}-${t}`);
+
+                if (t === tab) {
+                    pane.classList.remove('hidden');
+                    btn.classList.add('active', 'border-indigo-500', 'text-indigo-600', 'dark:text-indigo-400', 'bg-white', 'dark:bg-slate-900/90', 'font-semibold');
+                    btn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+                } else {
+                    pane.classList.add('hidden');
+                    btn.classList.remove('active', 'border-indigo-500', 'text-indigo-600', 'dark:text-indigo-400', 'bg-white', 'dark:bg-slate-900/90', 'font-semibold');
+                    btn.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
+                }
+            });
+        }
+
+        function setupSlider() {
+            const slider = document.getElementById('widthSlider');
+            slider.addEventListener('input', (e) => {
+                setPreviewWidth(parseInt(e.target.value));
+            });
+        }
+
+        function setPreviewWidth(val) {
+            const iframes = document.querySelectorAll('#mainView .preview-iframe');
+            const display = document.getElementById('widthValue');
+            const slider = document.getElementById('widthSlider');
+
+            if (val === '100%') {
+                iframes.forEach(iframe => iframe.style.width = '100%');
+                display.innerText = '100%';
+            } else {
+                iframes.forEach(iframe => iframe.style.width = `${val}px`);
+                display.innerText = `${val}px`;
+                slider.value = val;
+            }
+        }
+
+        function toggleOutlines() {
+            showOutlines = document.getElementById('outlineToggle').checked;
+            ['flex', 'grid', 'classic'].forEach(slot => updateSlot(slot));
+        }
+
+        function openModal(slot) {
+            currentModalSlot = slot;
+            const modal = document.getElementById('previewModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const slotNameMap = { flex: 'Flexbox', grid: 'CSS Grid', classic: 'テーブル' };
+
+            modalTitle.innerHTML = `<i class="fa-solid fa-expand"></i> Slot ${slot.toUpperCase()}: ${slotNameMap[slot]} - 拡大プレビュー`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            updateSlot(slot);
+            setModalDeviceWidth(375);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('previewModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            currentModalSlot = null;
+        }
+
+        function setModalDeviceWidth(width) {
+            const iframe = document.getElementById('modalIframe');
+            const btns = {
+                375: 'btn-modal-mobile',
+                768: 'btn-modal-tablet',
+                1024: 'btn-modal-desktop',
+                '100%': 'btn-modal-full'
+            };
+
+            Object.keys(btns).forEach(w => {
+                const btn = document.getElementById(btns[w]);
+                if (w == width) {
+                    btn.className = 'px-3 py-1.5 text-xs bg-indigo-600 text-white font-medium rounded transition flex items-center gap-1.5';
+                } else {
+                    btn.className = 'px-3 py-1.5 text-xs bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded transition flex items-center gap-1.5';
+                }
+            });
+
+            if (width === '100%') {
+                iframe.style.width = '100%';
+            } else {
+                iframe.style.width = `${width}px`;
+            }
+        }
+
+        function handleFileUpload(event, slot) {
+            const files = event.target.files;
+            if (!files.length) return;
+            processFiles(files, slot);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over-active');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over-active');
+        }
+
+        function handleDrop(e, slot) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over-active');
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                processFiles(files, slot);
+            }
+        }
+
+        function processFiles(files, slot) {
+            let loadedCount = 0;
+            const fileList = Array.from(files);
+
+            fileList.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const content = e.target.result;
+
+                    if (file.name.endsWith('.css')) {
+                        document.getElementById(`code-${slot}-css`).value = content;
+                        loadedCount++;
+                    } else if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(content, 'text/html');
+                        const styleTags = doc.querySelectorAll('style');
+
+                        let extractedCss = '';
+                        styleTags.forEach(style => {
+                            extractedCss += style.innerHTML + '\n';
+                            style.remove();
+                        });
+
+                        if (extractedCss.trim().length > 0) {
+                            document.getElementById(`code-${slot}-css`).value = extractedCss;
+                        }
+
+                        const bodyHtml = doc.body ? doc.body.innerHTML : content;
+                        document.getElementById(`code-${slot}-html`).value = bodyHtml.trim();
+                        loadedCount++;
+                    }
+
+                    updateSlot(slot);
+
+                    if (loadedCount === fileList.length) {
+                        showToast(`Slot ${slot.toUpperCase()} に ${loadedCount} 個のファイルを読み込みました！`, "success");
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        function copySummaryReport() {
+            const flexHtmlStat = document.getElementById('stat-flex-html').innerText;
+            const flexCssStat = document.getElementById('stat-flex-css').innerText;
+            const gridHtmlStat = document.getElementById('stat-grid-html').innerText;
+            const gridCssStat = document.getElementById('stat-grid-css').innerText;
+            const classicHtmlStat = document.getElementById('stat-classic-html').innerText;
+            const classicCssStat = document.getElementById('stat-classic-css').innerText;
+
+            const flexEasyRate = document.getElementById('rate-flex-easy').value;
+            const gridEasyRate = document.getElementById('rate-grid-easy').value;
+            const classicEasyRate = document.getElementById('rate-classic-easy').value;
+
+            const summaryNote = document.getElementById('note-summary-all').value;
+
+            const reportText = `【HTML/CSS フォームレイアウト比較・分析レポート】
+
+■ 1. Slot A: テーブル
+・HTML量: ${classicHtmlStat} / 評価: ${document.getElementById('eval-classic-html').value || '未入力'}
+・CSS量: ${classicCssStat} / 評価: ${document.getElementById('eval-classic-css').value || '未入力'}
+・修正しやすさ: ${classicEasyRate} - ${document.getElementById('note-classic-easy').value || '未入力'}
+・見た目・: 違い{document.getElementById('note-classic-look').value || '未入力'}
+
+■ 2. Slot B: Flexbox
+・HTML量: ${flexHtmlStat} / 評価: ${document.getElementById('eval-flex-html').value || '未入力'}
+・CSS量: ${flexCssStat} / 評価: ${document.getElementById('eval-flex-css').value || '未入力'}
+・修正しやすさ: ${flexEasyRate} - ${document.getElementById('note-flex-easy').value || '未入力'}
+・見た目・違い: ${document.getElementById('note-flex-look').value || '未入力'}
+
+■ 3. Slot C: Grid
+・HTML量: ${gridHtmlStat} / 評価: ${document.getElementById('eval-grid-html').value || '未入力'}
+・CSS量: ${gridCssStat} / 評価: ${document.getElementById('eval-grid-css').value || '未入力'}
+・修正しやすさ: ${gridEasyRate} - ${document.getElementById('note-grid-easy').value || '未入力'}
+・見た目・違い: ${document.getElementById('note-grid-look').value || '未入力'}
+
+■ 総合考察・メモ:
+${summaryNote || '未入力'}
+`;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = reportText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast("集計・考察のレポート文言をコピーしました！", "success");
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const bgClass = type === 'success' ? 'bg-emerald-600 text-white' :
+                type === 'warning' ? 'bg-amber-600 text-white' : 'bg-indigo-600 text-white';
+
+            toast.className = `px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 ${bgClass} toast-animate pointer-events-auto border border-white/10`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function updateAutoSummary() {
+            const summaryAll = document.getElementById('note-summary-all');
+            if (!summaryAll) return;
+
+            const flexHtml = document.getElementById('eval-flex-html').value;
+            const gridHtml = document.getElementById('eval-grid-html').value;
+            const classicHtml = document.getElementById('eval-classic-html').value;
+
+            const flexCss = document.getElementById('eval-flex-css').value;
+            const gridCss = document.getElementById('eval-grid-css').value;
+            const classicCss = document.getElementById('eval-classic-css').value;
+
+            const flexEasy = document.getElementById('rate-flex-easy').value;
+            const gridEasy = document.getElementById('rate-grid-easy').value;
+            const classicEasy = document.getElementById('rate-classic-easy').value;
+
+            const flexLook = document.getElementById('note-flex-look').value;
+            const gridLook = document.getElementById('note-grid-look').value;
+            const classicLook = document.getElementById('note-classic-look').value;
+
+            const hasInput = [
+                flexHtml, gridHtml, classicHtml,
+                flexCss, gridCss, classicCss,
+                flexLook, gridLook, classicLook
+            ].some(val => val.trim() !== '');
+
+            if (!hasInput) return;
+
+            let generatedText = '【各レイアウト手法の検証・比較まとめ】\n\n';
+
+            generatedText += `■ Slot A (テーブル):\n`;
+            if (classicHtml) generatedText += `・HTML構造: ${classicHtml}\n`;
+            if (classicCss) generatedText += `・CSS特徴: ${classicCss}\n`;
+            generatedText += `・修正容易性: ${classicEasy}\n`;
+            if (classicLook) generatedText += `・見た目: ${classicLook}\n`;
+            generatedText += `\n`;
+
+            generatedText += `■ Slot B (Flexbox):\n`;
+            if (flexHtml) generatedText += `・HTML構造: ${flexHtml}\n`;
+            if (flexCss) generatedText += `・CSS特徴: ${flexCss}\n`;
+            generatedText += `・修正容易性: ${flexEasy}\n`;
+            if (flexLook) generatedText += `・見た目: ${flexLook}\n`;
+            generatedText += `\n`;
+
+            generatedText += `■ Slot C (Grid):\n`;
+            if (gridHtml) generatedText += `・HTML構造: ${gridHtml}\n`;
+            if (gridCss) generatedText += `・CSS特徴: ${gridCss}\n`;
+            generatedText += `・修正容易性: ${gridEasy}\n`;
+            if (gridLook) generatedText += `・見た目: ${gridLook}\n`;
+
+            summaryAll.value = generatedText.trim();
+        }
+
+        const originalOnload = window.onload;
+        window.onload = function () {
+            if (originalOnload) originalOnload();
+
+            const targetIds = [
+                'eval-flex-html', 'eval-grid-html', 'eval-classic-html',
+                'eval-flex-css', 'eval-grid-css', 'eval-classic-css',
+                'rate-flex-easy', 'rate-grid-easy', 'rate-classic-easy',
+                'note-flex-easy', 'note-grid-easy', 'note-classic-easy',
+                'note-flex-look', 'note-grid-look', 'note-classic-look'
+            ];
+
+            targetIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updateAutoSummary);
+                    el.addEventListener('change', updateAutoSummary);
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>
